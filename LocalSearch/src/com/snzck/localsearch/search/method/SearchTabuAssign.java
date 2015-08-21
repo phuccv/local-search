@@ -17,7 +17,6 @@ import localsearch.model.VarIntLS;
 
 public class SearchTabuAssign implements SearchMethod {
 	
-	public static final boolean VERBOSE = false;
 	private static Logger logger = LoggerFactory.getLogger(SearchTabuAssign.class);
 	
 	private boolean isRunning;

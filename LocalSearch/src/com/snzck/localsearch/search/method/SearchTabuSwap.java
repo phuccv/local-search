@@ -17,7 +17,6 @@ import localsearch.model.VarIntLS;
 
 public class SearchTabuSwap implements SearchMethod {
 	
-	public static final boolean VERBOSE = false;
 	private static Logger logger = LoggerFactory.getLogger(SearchTabuSwap.class);
 	
 	private boolean isRunning;
