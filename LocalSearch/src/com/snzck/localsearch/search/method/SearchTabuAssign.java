@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.snzck.localsearch.SearchMethod;
 import com.snzck.localsearch.SearchTraceable;
 import com.snzck.localsearch.search.SearchConfigField;
-import com.znzck.localsearch.system.Config;
+import com.snzck.localsearch.system.Config;
 
 import localsearch.model.IConstraint;
 import localsearch.model.VarIntLS;

@@ -2,8 +2,8 @@ package com.snzck.localsearch.binpacking2d.initstrage;
 
 import com.snzck.localsearch.InitMethod;
 import com.snzck.localsearch.SearchModel;
-import com.znzck.localsearch.system.Config;
-import com.znzck.localsearch.system.ConfigManager;
+import com.snzck.localsearch.system.Config;
+import com.snzck.localsearch.system.ConfigManager;
 
 public class BpInitMethodManager {
 	

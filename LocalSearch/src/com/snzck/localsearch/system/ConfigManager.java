@@ -1,4 +1,4 @@
-package com.znzck.localsearch.system;
+package com.snzck.localsearch.system;
 
 import java.io.File;
 import java.io.FileInputStream;

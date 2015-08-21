@@ -6,7 +6,7 @@ import com.snzck.localsearch.SearchMethod;
 import com.snzck.localsearch.SearchTraceable;
 import com.snzck.localsearch.search.method.SearchTabuAssign;
 import com.snzck.localsearch.search.method.SearchTabuSwap;
-import com.znzck.localsearch.system.Config;
+import com.snzck.localsearch.system.Config;
 
 public class SearchMethodManager {
 	

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.snzck.localsearch.binpacking2d.BpConfigField;
-import com.znzck.localsearch.system.Config;
+import com.snzck.localsearch.system.Config;
 
 public class BpDataManager {
 	private HashMap<String, BpData> data;

@@ -1,4 +1,4 @@
-package com.znzck.filter;
+package com.snzck.filter;
 
 import java.io.IOException;
 

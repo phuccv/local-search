@@ -3,8 +3,8 @@ package com.snzck.localsearch.search;
 import java.util.Deque;
 import java.util.LinkedList;
 
-import com.znzck.localsearch.system.SystemConfigField;
-import com.znzck.localsearch.system.Config;
+import com.snzck.localsearch.system.Config;
+import com.snzck.localsearch.system.SystemConfigField;
 
 public class SearchEventPool {
 

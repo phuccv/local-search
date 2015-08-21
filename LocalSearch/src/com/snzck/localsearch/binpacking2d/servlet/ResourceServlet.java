@@ -15,7 +15,7 @@ import org.json.JSONObject;
 import com.snzck.localsearch.binpacking2d.initstrage.BpInitMethodType;
 import com.snzck.localsearch.binpacking2d.io.BpDataManager;
 import com.snzck.localsearch.search.SearchMethodType;
-import com.znzck.localsearch.system.ConfigManager;
+import com.snzck.localsearch.system.ConfigManager;
 
 /**
  * Servlet implementation class ResourceServlet
