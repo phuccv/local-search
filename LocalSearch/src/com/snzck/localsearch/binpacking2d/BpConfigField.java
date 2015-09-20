@@ -1,7 +1,7 @@
 package com.snzck.localsearch.binpacking2d;
 
 public enum BpConfigField {
-	BIN_PACKING_2D_DATA_FOLDER("E:\\Templates\\data\\binpacking2d");
+	BIN_PACKING_2D_DATA_FOLDER("E:\\phuc\\data\\binpacking2d");
 	
 	private String defaultValue;
 	

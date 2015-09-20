@@ -50,42 +50,44 @@ angular.module('BinPacking2D')
 		$scope.bp.binSize = this.bin;
 		$scope.bp.state.running = false;
 		$scope.bp.state.ready = true;
-		
 		solveConflict(this.items, this.bin);
-		
 		$scope.bp.items = this.items;
+		$scope.bp.globalViolations = this.violations;
+		$scope.bp.localViolations = this.violations;
 	});
+	
 	poller.on('LOCAL', function(){
-		
 		solveConflict(this.items, $scope.bp.binSize);
-		
 		$scope.bp.items = this.items;
+		$scope.bp.localViolations = this.violations;
 	});
+	
 	poller.on('RESET', function(){
 		$log.log("Local Reset" + this.violations);
 	});
+	
 	poller.on('GLOBAL', function(){
-		
 		solveConflict(this.items, $scope.bp.binSize);
-		
 		$scope.bp.items = this.items;
+		$scope.bp.globalViolations = this.violations;
+		$scope.bp.localViolations = this.violations;
 	});
+	
 	poller.on('GLOBAL_RESET', function(){
 		$log.log("Global Reset" + this.violations);
+		$scope.bp.localViolations = this.violations;
 	});
 	poller.on('FINISH', function(){
-		$log.log('Finish event');
-		
 		solveConflict(this.items, $scope.bp.binSize);
-		
 		$scope.bp.items = this.items;
-		
 		$scope.bp.state.running = false;
+		$scope.bp.state.ready = false;
 		
 	});
 
 	$scope.bp = {
 		file : 0,
+		step : 0,
 		initMode : 'RANDOM',
 		items : [],
 		binSize : {
@@ -96,7 +98,8 @@ angular.module('BinPacking2D')
 			ready : false,
 			running : false
 		},
-		violations : 0,
+		globalViolations : 0,
+		localViolations :0,
 		inputFileLists : [],
 		initMethodLists : []
 	};
@@ -123,7 +126,6 @@ angular.module('BinPacking2D')
 	};
 	
 	var localSearch = function () {
-		$log.log("Fight!");
 		$http.get('http://localhost:8080/LocalSearch/binpacking2d/control?action=start')
 		.success(function(data, status, headers, config) {
 			$scope.bp.state.running = true;
@@ -132,7 +134,6 @@ angular.module('BinPacking2D')
 
 	var stopSearch = function () {
 		$scope.bp.state.initReady = false;
-		$scope.bp.state.isRunning = false;
 		$http.get('http://localhost:8080/LocalSearch/binpacking2d/control?action=stop')
 		.success(function(data, status, headers, config) {
 			$scope.bp.state.running = false;
