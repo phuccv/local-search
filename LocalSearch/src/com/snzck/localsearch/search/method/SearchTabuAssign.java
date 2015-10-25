@@ -207,6 +207,18 @@ public class SearchTabuAssign implements SearchMethod {
 			 * Perform move
 			 */
 			int randomSituation = random.nextInt(bestMove.size);
+			
+			//template TODO remove
+			randomSituation = 0;
+			int assignValue = bestMove.getOtherValue(randomSituation);
+			for(int i = 1; i< bestMove.size; i++){
+				if(assignValue < bestMove.getOtherValue(i)){
+					randomSituation = i;
+					assignValue = bestMove.getOtherValue(i);
+				}
+			}
+			
+			
 			int variableId = bestMove.otherValues[randomSituation];
 			int value = bestMove.values[randomSituation];
 			VarIntLS variable = variablesList[variableId];

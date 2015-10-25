@@ -70,11 +70,16 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 		int nonStableCount = 0; // non-stable step counter
 		long endTime = System.currentTimeMillis() 
 				+ maxTimeSeconds * 1000; // end clock time
-		int tabuTable[][] = new int[variablesList.length][]; // taboo list assign
+		int tabuSwap[][] = new int[variablesList.length][]; // taboo list assign
+		int tabuAssign[][] = new int[variablesList.length][]; // taboo list assign
 		for(int i = 0; i< variablesList.length; i++){
-			tabuTable[i] = new int[variablesValueDomain[i]];
+			tabuSwap[i] = new int[variablesList.length];
+			tabuAssign[i] = new int[variablesValueDomain[i]];
+			for(int j = 0; j< variablesList.length; j++){
+				tabuSwap[i][j] = -tabuLength;
+			}
 			for(int j = 0; j< variablesValueDomain[i]; j++){
-				tabuTable[i][j] = -tabuLength;
+				tabuAssign[i][j] = -tabuLength;
 			}
 		}
 		int localBestViolation = constraintSystem.violations(); // local best
@@ -108,10 +113,16 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			bestMove.clear();
 			
 			/*
-			 * Search all possible for swap
+			 * Search all possible swap
 			 */
 			for(int i = 0; i < variablesList.length; i++){
-				for(int j = 0; j < variablesList.length; j++){
+				for(int j = i+1 ; j < variablesList.length; j++){
+					
+					// Check taboo
+					if(tabuSwap[i][j] + tabuLength > iterator){
+						continue;
+					}
+					
 					// check delta
 					int deltaCheck = constraintSystem.getSwapDelta(variablesList[i], variablesList[j]);
 					if( deltaCheck < minDelta){
@@ -140,17 +151,18 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 					 * Check movable from taboo list: if not movable then 
 					 * check on  other value
 					 */
-					if(tabuTable[i][checkValue -variable.getMinValue()] + tabuLength > iterator){
+					if(tabuAssign[i][checkValue -variable.getMinValue()] + tabuLength > iterator){
 						continue;
 					}
 					
 					/*
-					 * Check delta of this assign, if new bester then generate
+					 * Check delta of this assign, if new best then generate
 					 * new list of movable.
 					 */
 					int deltaCheck = 
 							constraintSystem.getAssignDelta(variable, checkValue);
-					if( deltaCheck < minDelta){ // found new bester assign
+					if( deltaCheck < minDelta){ // found new best assign
+						System.out.println("new best: " + deltaCheck);
 						bestMove.clear();
 						minDelta = deltaCheck;
 						bestMove.add(i, checkValue);
@@ -162,7 +174,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			}
 			
 			/*
-			 * Check move legal, nic
+			 * Check legal move, nic
 			 */
 			if(bestMove.isEmpty()){
 				numReset ++;
@@ -184,8 +196,8 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 				tracer.localReset(numReset);
 				for(int i = 0; i< variablesList.length; i++){
 					variablesList[i].setValuePropagate(localBest[i]);
-					for(int j = 0; j< tabuTable[i].length; j++){
-						tabuTable[i][j] = -tabuLength;
+					for(int j = 0; j< tabuSwap[i].length; j++){
+						tabuSwap[i][j] = -tabuLength;
 					}
 				}
 				nonStableCount =0;
@@ -213,8 +225,8 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 					tracer.localReset(numReset);
 					for(int i = 0; i< variablesList.length; i++){
 						variablesList[i].setValuePropagate(localBest[i]);
-						for(int j = 0; j< tabuTable[i].length; j++){
-							tabuTable[i][j] = -tabuLength;
+						for(int j = 0; j< tabuSwap[i].length; j++){
+							tabuSwap[i][j] = -tabuLength;
 						}
 					}
 					nonStableCount = 0;
@@ -237,9 +249,8 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 				int otherVarValue = otherVar.getValue();
 				// setting value and update tabuList
 				otherVar.setValuePropagate(var.getValue());
-				tabuTable[otherVariableId][var.getValue() - var.getMinValue()] = iterator;
+				tabuSwap[variableId][otherVariableId] = iterator;
 				var.setValuePropagate(otherVarValue);
-				tabuTable[variableId][otherVarValue - otherVar.getMinValue()] = iterator;
 				
 				// update best
 				if(constraintSystem.violations() < localBestViolation){// update local best
@@ -248,7 +259,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 					for(int i = 0; i< variablesList.length; i++){
 						localBest[i] = variablesList[i].getValue();
 					}
-					if(localBestViolation < globalBestViolation){ // updat global
+					if(localBestViolation < globalBestViolation){ // update global
 						globalBestViolation = localBestViolation;
 						for(int i = 0; i< variablesList.length; i++){
 							globalBest[i] = localBest[i];
@@ -256,8 +267,9 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 					}
 				}
 			} else {
-				int variableId = bestMove.otherValues[randomSituation];
-				int value = bestMove.values[randomSituation];
+				int variableId = bestMove.values[randomSituation];
+				int value = bestMove.otherValues[randomSituation];
+				System.out.println("Assign " + variableId + " to " + value);
 				VarIntLS variable = variablesList[variableId];
 				variable.setValuePropagate(value);
 				if(constraintSystem.violations() < localBestViolation){ // update local best
@@ -278,7 +290,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 					}
 				}
 				// update tabuList
-				tabuTable[variableId][value] = iterator;
+				tabuAssign[variableId][value] = iterator;
 			}
 			
 			/*
@@ -388,8 +400,8 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			if(size >= MAX_MOVECOUNT){
 				return;
 			}
-			otherValues[size] = variableId;
-			values[size++] = value;
+			values[size] = variableId;
+			otherValues[size++] = value;
 		}
 		
 		public boolean isEmpty(){
