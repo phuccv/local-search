@@ -24,6 +24,10 @@ public class BpInitMethodManager {
 			method = new BpAllZeroInitMethod(model);
 			break;
 			
+		case ALL_OUT:
+			method = new BpAllOutOfBinInitMethod(model);
+			break;
+			
 		default:
 			break;
 		}

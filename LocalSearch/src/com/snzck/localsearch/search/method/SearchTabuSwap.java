@@ -67,8 +67,8 @@ public class SearchTabuSwap implements SearchMethod {
 				+ maxTimeSeconds * 1000; // end clock time
 		int tabuTable[][] = new int[variablesList.length][]; // taboo list
 		for(int i = 0; i< variablesList.length; i++){
-			tabuTable[i] = new int[variablesValueDomain[i]];
-			for(int j = 0; j< variablesValueDomain[i]; j++){
+			tabuTable[i] = new int[variablesList.length];
+			for(int j = 0; j< variablesList.length; j++){
 				tabuTable[i][j] = -tabuLength;
 			}
 		}
@@ -113,11 +113,11 @@ public class SearchTabuSwap implements SearchMethod {
 					
 					int checkDelta = constraintSystem.getSwapDelta(var, otherVar);
 					
-					// check variable swap able
-					if((tabuTable[i][otherVar.getValue() - otherVar.getMinValue()] + tabuLength > iterator
-							&& tabuTable[j][var.getValue() - var.getMinValue()] + tabuLength > iterator)){
+					// check variable swapable
+					if((tabuTable[i][j] + tabuLength > iterator
+							&& tabuTable[j][i] + tabuLength > iterator)){
 						if(constraintSystem.violations() + checkDelta >= localBestViolation){
-							continue; // search for other swaping
+							continue; // search for other swapping
 						}
 						
 					}
@@ -205,9 +205,9 @@ public class SearchTabuSwap implements SearchMethod {
 			int otherVarValue = otherVar.getValue();
 			// setting value and update tabuList
 			otherVar.setValuePropagate(var.getValue());
-			tabuTable[otherVariableId][var.getValue() - var.getMinValue()] = iterator;
+			tabuTable[otherVariableId][variableId] = iterator;
 			var.setValuePropagate(otherVarValue);
-			tabuTable[variableId][otherVarValue - otherVar.getMinValue()] = iterator;
+			tabuTable[variableId][otherVariableId] = iterator;
 			
 			// update best
 			if(constraintSystem.violations() < localBestViolation){// update local best

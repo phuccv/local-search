@@ -27,7 +27,7 @@ public class SearchTabuAssign implements SearchMethod {
 	
 	private VarIntLS[] variablesList;
 	
-	private int[] variablesValueDomain;
+	private int[] variablesDomain;
 	
 	/**
 	 * Construct new TabuSearchImplement with constraint system
@@ -49,10 +49,10 @@ public class SearchTabuAssign implements SearchMethod {
 			logger.error("Constructor: constraint system invalid -- no vairable list");
 			return;
 		}
-		variablesValueDomain = new int[variablesList.length];
+		variablesDomain = new int[variablesList.length];
 		for(int i = 0; i< variablesList.length; i++){
 			VarIntLS tmpVar = variablesList[i];
-			variablesValueDomain[i] = tmpVar.getMaxValue() - tmpVar.getMinValue() + 1;
+			variablesDomain[i] = tmpVar.getMaxValue() - tmpVar.getMinValue() + 1;
 		}
 	}
 	
@@ -72,8 +72,8 @@ public class SearchTabuAssign implements SearchMethod {
 				+ maxTimeSeconds * 1000; // end clock time
 		int tabuTable[][] = new int[variablesList.length][]; // taboo list
 		for(int i = 0; i< variablesList.length; i++){
-			tabuTable[i] = new int[variablesValueDomain[i]];
-			for(int j = 0; j< variablesValueDomain[i]; j++){
+			tabuTable[i] = new int[variablesDomain[i]];
+			for(int j = 0; j< variablesDomain[i]; j++){
 				tabuTable[i][j] = -tabuLength;
 			}
 		}
@@ -113,29 +113,27 @@ public class SearchTabuAssign implements SearchMethod {
 				/*
 				 *  search all value assignable to variable
 				 */
-				for(int j = 0; j< variablesValueDomain[i]; j++){
-					int checkValue = variable.getMinValue() + j;
-					
+				for(int j = 0; j< variablesDomain[i]; j++){
 					/*
 					 * Check movable from taboo list: if not movable then 
 					 * check on  other value
 					 */
-					if(tabuTable[i][checkValue -variable.getMinValue()] + tabuLength > iterator){
+					if(tabuTable[i][j] + tabuLength > iterator){
 						continue;
 					}
 					
 					/*
-					 * Check delta of this assign, if new bester then generate
+					 * Check delta of this assignment, if found a better then generate
 					 * new list of movable.
 					 */
 					int deltaCheck = 
-							constraintSystem.getAssignDelta(variable, checkValue);
-					if( deltaCheck < minDelta){ // found new bester assign
+							constraintSystem.getAssignDelta(variable, j + variable.getMinValue());
+					if( deltaCheck < minDelta){ // found new better assign
 						bestMove.clear();
 						minDelta = deltaCheck;
-						bestMove.add(i, checkValue);
-					} else if (deltaCheck == minDelta){ // found same best assign
-						bestMove.add(i, checkValue);
+						bestMove.add(i, j);
+					} else if (deltaCheck == minDelta){ // found same with best assign
+						bestMove.add(i, j);
 					}
 				}
 			}
@@ -150,7 +148,7 @@ public class SearchTabuAssign implements SearchMethod {
 					tracer.globalReset(0); // FIXME reset times
 					for(int i = 0; i< variablesList.length; i++){
 						VarIntLS var = variablesList[i];
-						int value = random.nextInt(variablesValueDomain[i])
+						int value = random.nextInt(variablesDomain[i])
 								+ var.getMinValue();
 						var.setValuePropagate(value);
 						localBest[i] = value;
@@ -179,7 +177,7 @@ public class SearchTabuAssign implements SearchMethod {
 						tracer.globalReset(0);// FIXME reset times
 						for(int i = 0; i< variablesList.length; i++){
 							VarIntLS var = variablesList[i];
-							int value = random.nextInt(variablesValueDomain[i])
+							int value = random.nextInt(variablesDomain[i])
 									+ var.getMinValue();
 							var.setValuePropagate(value);
 							localBest[i] = value;
@@ -206,23 +204,22 @@ public class SearchTabuAssign implements SearchMethod {
 			/*
 			 * Perform move
 			 */
-			int randomSituation = random.nextInt(bestMove.size);
+			int situation = random.nextInt(bestMove.size);
 			
-			//template TODO remove
-			randomSituation = 0;
-			int assignValue = bestMove.getOtherValue(randomSituation);
-			for(int i = 1; i< bestMove.size; i++){
-				if(assignValue < bestMove.getOtherValue(i)){
-					randomSituation = i;
-					assignValue = bestMove.getOtherValue(i);
-				}
-			}
-			
-			
-			int variableId = bestMove.otherValues[randomSituation];
-			int value = bestMove.values[randomSituation];
+			//temporary TODO remove
+//			situation = 0;
+//			int assignValue = bestMove.getOtherValue(situation);
+//			for(int i = 1; i< bestMove.size; i++){
+//				if(assignValue < bestMove.getOtherValue(i)){
+//					situation = i;
+//					assignValue = bestMove.getOtherValue(i);
+//				}
+//			}
+
+			int variableId = bestMove.values[situation];
+			int value = bestMove.otherValues[situation];
 			VarIntLS variable = variablesList[variableId];
-			variable.setValuePropagate(value);
+			variable.setValuePropagate(value + variable.getMinValue());
 			if(constraintSystem.violations() < localBestViolation){ // update local best
 				tracer.foundLocal();
 				localBestViolation = constraintSystem.violations();
@@ -282,8 +279,8 @@ public class SearchTabuAssign implements SearchMethod {
 				+ maxTimeSeconds * 1000; // end clock time
 		int tabuTable[][] = new int[variablesList.length][]; // taboo list
 		for(int i = 0; i< variablesList.length; i++){
-			tabuTable[i] = new int[variablesValueDomain[i]];
-			for(int j = 0; j< variablesValueDomain[i]; j++){
+			tabuTable[i] = new int[variablesDomain[i]];
+			for(int j = 0; j< variablesDomain[i]; j++){
 				tabuTable[i][j] = -tabuLength;
 			}
 		}
@@ -362,7 +359,7 @@ public class SearchTabuAssign implements SearchMethod {
 					Collections.shuffle(varValues);
 					for(int i = 0; i< variablesList.length; i++){
 						variablesList[i].setValuePropagate(varValues.get(i));
-						for(int j = 0; j< variablesValueDomain[i]; j++){
+						for(int j = 0; j< variablesDomain[i]; j++){
 							tabuTable[i][j] = Integer.MIN_VALUE;
 						}
 					}
@@ -391,7 +388,7 @@ public class SearchTabuAssign implements SearchMethod {
 						Collections.shuffle(varValues);
 						for(int i = 0; i< variablesList.length; i++){
 							variablesList[i].setValuePropagate(varValues.get(i));
-							for(int j = 0; j< variablesValueDomain[i]; j++){
+							for(int j = 0; j< variablesDomain[i]; j++){
 								tabuTable[i][j] = Integer.MIN_VALUE;
 							}
 						}
@@ -501,7 +498,7 @@ public class SearchTabuAssign implements SearchMethod {
 	 */
 	class PairListStore{
 		
-		public static final int MAX_MOVECOUNT = 10000;
+		public static final int MAX_MOVECOUNT = 100000;
 		
 		public int size;
 		/**
@@ -524,6 +521,7 @@ public class SearchTabuAssign implements SearchMethod {
 			if(id < size){
 				return values[id];
 			}
+			System.out.println("ERROR on get value pairlist");
 			return 0;
 		}
 		
@@ -531,6 +529,7 @@ public class SearchTabuAssign implements SearchMethod {
 			if(id < size){
 				return otherValues[id];
 			}
+			System.out.println("ERROR on get value pairlist");
 			return 0;
 		}
 		
@@ -538,12 +537,13 @@ public class SearchTabuAssign implements SearchMethod {
 			size = 0;
 		}
 		
-		public void add(int variableId, int value){
+		public void add(int value, int otherValue){
 			if(size >= MAX_MOVECOUNT){
+				System.out.println("add out of bound");
 				return;
 			}
-			otherValues[size] = variableId;
-			values[size++] = value;
+			values[size] = value;
+			otherValues[size++] = otherValue;
 		}
 		
 		public boolean isEmpty(){

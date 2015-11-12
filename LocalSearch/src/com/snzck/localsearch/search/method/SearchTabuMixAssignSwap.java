@@ -243,7 +243,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			if(isSwap){
 				int variableId = bestMove.values[randomSituation];
 				int otherVariableId = bestMove.otherValues[randomSituation];
-				System.out.println("Swap " + variableId + " " + otherVariableId);
+				//System.out.println("Swap " + variableId + " " + otherVariableId);
 				VarIntLS var = variablesList[variableId];
 				VarIntLS otherVar = variablesList[otherVariableId];
 				int otherVarValue = otherVar.getValue();
@@ -269,7 +269,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			} else {
 				int variableId = bestMove.values[randomSituation];
 				int value = bestMove.otherValues[randomSituation];
-				System.out.println("Assign " + variableId + " to " + value);
+				//System.out.println("Assign " + variableId + " to " + value);
 				VarIntLS variable = variablesList[variableId];
 				variable.setValuePropagate(value);
 				if(constraintSystem.violations() < localBestViolation){ // update local best

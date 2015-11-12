@@ -23,7 +23,6 @@ public class Config extends Properties {
 	
 	protected Config(File configFile) throws FileNotFoundException, IOException{
 		super();
-		
 		// Load default configuration
 		setDefault();
 		
