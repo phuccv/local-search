@@ -4,7 +4,7 @@ public enum SearchConfigField {
 
 	TABU_LENGTH("100"),
 	MAX_STABE("100"),
-	MAX_TIME("10000"),
+	MAX_TIME("120"),
 	MAX_ITERATOR("100000"),
 	MAX_LOCAL_RESET("10");
 	

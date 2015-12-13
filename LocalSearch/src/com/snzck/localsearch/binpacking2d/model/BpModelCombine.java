@@ -5,9 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import localsearch.constraints.basic.AND;
-import localsearch.constraints.basic.IsEqual;
-import localsearch.constraints.basic.LessOrEqual;
-import localsearch.constraints.basic.LessThan;
 import localsearch.constraints.basic.OR;
 import localsearch.functions.basic.FuncPlus;
 import localsearch.model.ConstraintSystem;
@@ -15,12 +12,14 @@ import localsearch.model.IConstraint;
 import localsearch.model.IFunction;
 import localsearch.model.LocalSearchManager;
 import localsearch.model.VarIntLS;
+import localsearch.search.TabuSearch;
 
 import com.snzck.localsearch.FileFormatException;
 import com.snzck.localsearch.InitMethod;
-import com.snzck.localsearch.SearchMethod;
 import com.snzck.localsearch.SearchModel;
 import com.snzck.localsearch.binpacking2d.io.BpData;
+import com.snzck.localsearch.constraints.basic.IsEqual;
+import com.snzck.localsearch.constraints.basic.LessOrEqual;
 import com.snzck.localsearch.functions.basic.Divide;
 import com.snzck.localsearch.functions.basic.Module;
 import com.snzck.localsearch.search.SearchEventPool;
@@ -60,12 +59,12 @@ public class BpModelCombine implements SearchModel {
 		allocateVariable();
 		
 		loadConstraints();
-		
+
 		manager.close();
 	}
 
 	private void allocateVariable(){
-		final int COMBINE_MAX = (binWidth - 1) * binHeight;
+		final int COMBINE_MAX = binWidth * binHeight - binWidth;
 		combinedPos = new VarIntLS[itemCount];
 		rotated = new VarIntLS[itemCount];
 		for(int i = 0; i< itemCount; i++){
@@ -149,7 +148,7 @@ public class BpModelCombine implements SearchModel {
 			}
 		}
 		
-		// All items must be not overlap with bin bound
+		// All items must be not overlap with bin-bound
 		for(int i = 0; i< itemCount; i++){
 			IConstraint[] allCase = new IConstraint[2];
 			// Case 0 : item NOT rotated
@@ -169,6 +168,11 @@ public class BpModelCombine implements SearchModel {
 			cs.post(new OR(allCase));
 		}
 		
+	}
+	
+	public void oldSearchMethod(){
+		TabuSearch ts = new TabuSearch();
+		ts.search(cs, 1000, 1000, 100000, 50);
 	}
 	
 	private List<Integer[]> generateState(){
@@ -249,14 +253,17 @@ public class BpModelCombine implements SearchModel {
 
 	@Override
 	public VarIntLS[] getVariables() {
-		VarIntLS[] vars = new VarIntLS[combinedPos.length + rotated.length];
-		for(int i = 0; i< combinedPos.length; i++){
+		int size = combinedPos.length + rotated.length;
+		int i =0;
+		VarIntLS[] vars = new VarIntLS[size];
+		
+		for(i = 0; i< combinedPos.length; i++){
 			vars[i] = combinedPos[i];
 		}
-		for(int i = 0; i< rotated.length; i++){
-			vars[i + combinedPos.length] = rotated[i];
+		for(; i < size; i++){
+			vars[i] = rotated[i - combinedPos.length];
 		}
-		return combinedPos;
+		return vars;
 	}
 
 	@Override

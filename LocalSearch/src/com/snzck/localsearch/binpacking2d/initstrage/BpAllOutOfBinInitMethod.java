@@ -19,12 +19,12 @@ public class BpAllOutOfBinInitMethod implements InitMethod {
 		
 		// initial for all item position
 		for(VarIntLS v : allVars[0]){
-			v.setValue(Integer.MAX_VALUE);
+			v.setValuePropagate(v.getMaxValue());
 		}
 		
 		// initial for all item rotation to NOT rotated
 		for(VarIntLS v : allVars[1]){
-			v.setValue(0);
+			v.setValuePropagate(0);
 		}
 		
 	}

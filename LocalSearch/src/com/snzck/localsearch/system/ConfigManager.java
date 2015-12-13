@@ -11,10 +11,12 @@ public enum ConfigManager {
 	private Config config;
 	
 	private ConfigManager(){
+		File f = null;
 		try {
-			this.config = new Config(new File("config.properties"));
+			f = new File("config.properties");
+			this.config = new Config(f);
 		} catch (IOException e) {
-			System.out.println("Not found config file. Load default.");
+			System.out.println("Not found config file on '" + f.getAbsolutePath() +"'. Load default.");
 			config = new Config();
 		}
 	}

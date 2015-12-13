@@ -27,7 +27,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 	
 	private VarIntLS[] variablesList;
 	
-	private int[] variablesValueDomain;
+	private int[] variablesDomain;
 	
 	/**
 	 * Construct new TabuSearchImplement with constraint system
@@ -45,14 +45,15 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 		this.config = config;
 		this.constraintSystem = cs;
 		this.variablesList = constraintSystem.getVariables();
+		
 		if(variablesList == null){
 			logger.error("Constructor: constraint system invalid -- no vairable list");
 			return;
 		}
-		variablesValueDomain = new int[variablesList.length];
+		variablesDomain = new int[variablesList.length];
 		for(int i = 0; i< variablesList.length; i++){
 			VarIntLS tmpVar = variablesList[i];
-			variablesValueDomain[i] = tmpVar.getMaxValue() - tmpVar.getMinValue() + 1;
+			variablesDomain[i] = tmpVar.getMaxValue() - tmpVar.getMinValue() + 1;
 		}
 	}
 	
@@ -70,16 +71,15 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 		int nonStableCount = 0; // non-stable step counter
 		long endTime = System.currentTimeMillis() 
 				+ maxTimeSeconds * 1000; // end clock time
-		int tabuSwap[][] = new int[variablesList.length][]; // taboo list assign
-		int tabuAssign[][] = new int[variablesList.length][]; // taboo list assign
+		int tabuAssignTable[][] = new int[variablesList.length][]; // taboo list
+		int tabuSwapTable[][] = new int[variablesList.length][variablesList.length];
 		for(int i = 0; i< variablesList.length; i++){
-			tabuSwap[i] = new int[variablesList.length];
-			tabuAssign[i] = new int[variablesValueDomain[i]];
-			for(int j = 0; j< variablesList.length; j++){
-				tabuSwap[i][j] = -tabuLength;
+			tabuAssignTable[i] = new int[variablesDomain[i]];
+			for(int j = 0; j< variablesDomain[i]; j++){
+				tabuAssignTable[i][j] = -tabuLength;
 			}
-			for(int j = 0; j< variablesValueDomain[i]; j++){
-				tabuAssign[i][j] = -tabuLength;
+			for(int j = 0; j< variablesList.length; j++){
+				tabuSwapTable[i][j] = -tabuLength;
 			}
 		}
 		int localBestViolation = constraintSystem.violations(); // local best
@@ -95,8 +95,6 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 		Random random = new Random(); // random factor
 		int numReset = 0; // number of reset that not reduce local best
 		
-		boolean isSwap = false;
-		
 		
 		/*
 		 *  main loop: loop while constraint violation not equal zero and time
@@ -109,81 +107,90 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			 * Reset all delta, bestMove
 			 */
 			minDelta = Integer.MAX_VALUE;
-			isSwap = false;
 			bestMove.clear();
 			
+			boolean isSwap = false;
+			
 			/*
-			 * Search all possible swap
+			 *  search all legal neighborhood
 			 */
-			for(int i = 0; i < variablesList.length; i++){
-				for(int j = i+1 ; j < variablesList.length; j++){
+			for(int i = 0; i< variablesList.length; i++){
+				VarIntLS variable = variablesList[i];
+				
+				// Search all swappable
+				for(int j = i + 1; j< variablesList.length; j++){
+					VarIntLS otherVar = variablesList[j];
 					
-					// Check taboo
-					if(tabuSwap[i][j] + tabuLength > iterator){
+					if(tabuSwapTable[i][j] + tabuLength > iterator){
 						continue;
 					}
 					
-					// check delta
-					int deltaCheck = constraintSystem.getSwapDelta(variablesList[i], variablesList[j]);
-					if( deltaCheck < minDelta){
-						bestMove.clear();
-						minDelta = deltaCheck;
-						bestMove.add(i, j);
+					if(variable.getMaxValue() != otherVar.getMaxValue()){
+						continue;
+					}
+					
+					int deltaCheck = constraintSystem.getSwapDelta(variable, otherVar);
+					
+					if(deltaCheck < minDelta){
 						isSwap = true;
+						bestMove.clear();
+						bestMove.add(i, j);
 					} else if(deltaCheck == minDelta && isSwap){
 						bestMove.add(i, j);
 					}
 				}
-			}
-
-			/*
-			 *  search all legal neighborhood for assign
-			 */
-			for(int i = 0; i< variablesList.length; i++){
-				VarIntLS variable = variablesList[i];
+				
 				/*
 				 *  search all value assignable to variable
 				 */
-				for(int j = 0; j< variablesValueDomain[i]; j++){
-					int checkValue = variable.getMinValue() + j;
-					
+				int state = 0;
+				for(int j = 0; j< variablesDomain[i]; j++){
 					/*
 					 * Check movable from taboo list: if not movable then 
 					 * check on  other value
 					 */
-					if(tabuAssign[i][checkValue -variable.getMinValue()] + tabuLength > iterator){
+					if(tabuAssignTable[i][j] + tabuLength > iterator){
 						continue;
 					}
 					
 					/*
-					 * Check delta of this assign, if new best then generate
+					 * Check delta of this assignment, if found a better then generate
 					 * new list of movable.
 					 */
 					int deltaCheck = 
-							constraintSystem.getAssignDelta(variable, checkValue);
-					if( deltaCheck < minDelta){ // found new best assign
-						System.out.println("new best: " + deltaCheck);
+							constraintSystem.getAssignDelta(variable, j + variable.getMinValue());
+					if( deltaCheck < minDelta){ // found new better assignment
 						bestMove.clear();
 						minDelta = deltaCheck;
-						bestMove.add(i, checkValue);
+						bestMove.add(i, j);
 						isSwap = false;
-					} else if (deltaCheck == minDelta && !isSwap){ // found same best assign
-						bestMove.add(i, checkValue);
+						state = 1;
+					} else if (deltaCheck == minDelta && !isSwap){ // found same with best assign
+						if(state == 1 && minDelta <= 0){
+							bestMove.size --;
+						}
+						state = 1;
+						bestMove.add(i, j);
+					} else {
+//						state = 0;
 					}
 				}
+				
 			}
 			
 			/*
-			 * Check legal move, nic
+			 * Check move legal, nic
 			 */
 			if(bestMove.isEmpty()){
 				numReset ++;
 				if(numReset > maxResetForOneLocal){
-					logger.info("Big reseting...");
+					if(VERBOSE){
+						logger.info("Big reseting...");
+					}
 					tracer.globalReset(0); // FIXME reset times
 					for(int i = 0; i< variablesList.length; i++){
 						VarIntLS var = variablesList[i];
-						int value = random.nextInt(variablesValueDomain[i])
+						int value = random.nextInt(variablesDomain[i])
 								+ var.getMinValue();
 						var.setValuePropagate(value);
 						localBest[i] = value;
@@ -192,12 +199,14 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 					numReset = 0;
 					continue; // search continue;
 				}
-				logger.info("No more Movable! Restarting " + numReset +  " ..");
+				if(VERBOSE){
+					logger.info("No more Movable! Restarting " + numReset +  " ..");
+				}
 				tracer.localReset(numReset);
 				for(int i = 0; i< variablesList.length; i++){
 					variablesList[i].setValuePropagate(localBest[i]);
-					for(int j = 0; j< tabuSwap[i].length; j++){
-						tabuSwap[i][j] = -tabuLength;
+					for(int j = 0; j< tabuAssignTable[i].length; j++){
+						tabuAssignTable[i][j] = -tabuLength;
 					}
 				}
 				nonStableCount =0;
@@ -208,11 +217,13 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 				if(nonStableCount > maxStable){
 					numReset ++;
 					if(numReset > maxResetForOneLocal){
-						logger.info("Big reseting...");
+						if(VERBOSE){
+							logger.info("Big reseting...");
+						}
 						tracer.globalReset(0);// FIXME reset times
 						for(int i = 0; i< variablesList.length; i++){
 							VarIntLS var = variablesList[i];
-							int value = random.nextInt(variablesValueDomain[i])
+							int value = random.nextInt(variablesDomain[i])
 									+ var.getMinValue();
 							var.setValuePropagate(value);
 							localBest[i] = value;
@@ -221,12 +232,14 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 						numReset = 0;
 						continue; // search continue;
 					}
-					logger.info("Restarting..");
+					if(VERBOSE){
+						logger.info("Restarting..");
+					}
 					tracer.localReset(numReset);
 					for(int i = 0; i< variablesList.length; i++){
 						variablesList[i].setValuePropagate(localBest[i]);
-						for(int j = 0; j< tabuSwap[i].length; j++){
-							tabuSwap[i][j] = -tabuLength;
+						for(int j = 0; j< tabuAssignTable[i].length; j++){
+							tabuAssignTable[i][j] = -tabuLength;
 						}
 					}
 					nonStableCount = 0;
@@ -236,42 +249,47 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 				nonStableCount = 0;
 			}
 			
-			/*
-			 * Perform move
-			 */
-			int randomSituation = random.nextInt(bestMove.size);
+			int situation = random.nextInt(bestMove.size);
+			
 			if(isSwap){
-				int variableId = bestMove.values[randomSituation];
-				int otherVariableId = bestMove.otherValues[randomSituation];
-				//System.out.println("Swap " + variableId + " " + otherVariableId);
-				VarIntLS var = variablesList[variableId];
-				VarIntLS otherVar = variablesList[otherVariableId];
-				int otherVarValue = otherVar.getValue();
-				// setting value and update tabuList
-				otherVar.setValuePropagate(var.getValue());
-				tabuSwap[variableId][otherVariableId] = iterator;
-				var.setValuePropagate(otherVarValue);
+				// Perform swap
+				int varId = bestMove.values[situation];
+				int otherId = bestMove.otherValues[situation];
+				VarIntLS var = variablesList[varId];
+				VarIntLS other = variablesList[otherId];
 				
-				// update best
-				if(constraintSystem.violations() < localBestViolation){// update local best
-					numReset = 0; // set numReset = 0 when new local bester was founded
+				int tmpValue = var.getValue();
+				var.setValuePropagate(other.getValue());
+				other.setValuePropagate(tmpValue);
+				
+				
+				if(constraintSystem.violations() < localBestViolation){
+					tracer.foundLocal();
 					localBestViolation = constraintSystem.violations();
 					for(int i = 0; i< variablesList.length; i++){
 						localBest[i] = variablesList[i].getValue();
 					}
-					if(localBestViolation < globalBestViolation){ // update global
+					numReset = 0; // update numReset after founded new bester local
+					
+					// update global mark
+					if(localBestViolation < globalBestViolation){
+						tracer.foundGlobal();
 						globalBestViolation = localBestViolation;
 						for(int i = 0; i< variablesList.length; i++){
 							globalBest[i] = localBest[i];
 						}
 					}
 				}
+				// update tabu swap table
+				tabuSwapTable[varId][otherId] = iterator;
 			} else {
-				int variableId = bestMove.values[randomSituation];
-				int value = bestMove.otherValues[randomSituation];
-				//System.out.println("Assign " + variableId + " to " + value);
+				/*
+				 * Perform assign move
+				 */
+				int variableId = bestMove.values[situation];
+				int value = bestMove.otherValues[situation];
 				VarIntLS variable = variablesList[variableId];
-				variable.setValuePropagate(value);
+				variable.setValuePropagate(value + variable.getMinValue());
 				if(constraintSystem.violations() < localBestViolation){ // update local best
 					tracer.foundLocal();
 					localBestViolation = constraintSystem.violations();
@@ -289,8 +307,9 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 						}
 					}
 				}
-				// update tabuList
-				tabuAssign[variableId][value] = iterator;
+				// update tabuTable
+				tabuAssignTable[variableId][value] = iterator;
+				
 			}
 			
 			/*
@@ -359,7 +378,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 	 */
 	class PairListStore{
 		
-		public static final int MAX_MOVECOUNT = 10000;
+		public static final int MAX_MOVECOUNT = 100000;
 		
 		public int size;
 		/**
@@ -382,6 +401,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			if(id < size){
 				return values[id];
 			}
+			System.out.println("ERROR on get value pairlist");
 			return 0;
 		}
 		
@@ -389,6 +409,7 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			if(id < size){
 				return otherValues[id];
 			}
+			System.out.println("ERROR on get value pairlist");
 			return 0;
 		}
 		
@@ -396,12 +417,14 @@ public class SearchTabuMixAssignSwap implements SearchMethod {
 			size = 0;
 		}
 		
-		public void add(int variableId, int value){
+		public void add(int value, int otherValue){
 			if(size >= MAX_MOVECOUNT){
+				System.out.println("add out of bound");
 				return;
 			}
-			values[size] = variableId;
-			otherValues[size++] = value;
+			values[size] = value;
+			otherValues[size] = otherValue;
+			size++;
 		}
 		
 		public boolean isEmpty(){

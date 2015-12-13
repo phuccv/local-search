@@ -79,6 +79,26 @@ public class BpData {
 			itemHeights[i] = heightList.get(i);
 		}
 		
+		// sort item list by square
+		int tmpSwap = 0;
+		int[] squareItems = new int[itemCount];
+		for(int i = 0; i< itemCount; i++){
+			squareItems[i] = itemWidths[i] * itemHeights[i];
+		}
+		for(int i =0; i< itemCount; i++){
+			for(int j=i + 1; j< itemCount; j++){
+				if(squareItems[i] < squareItems[j]){
+					tmpSwap = itemWidths[i];
+					itemWidths[i] = itemWidths[j];
+					itemWidths[j] = tmpSwap;
+					tmpSwap = itemHeights[i];
+					itemHeights[i] = itemHeights[j];
+					itemHeights[j] = tmpSwap;
+				}
+			}
+		}
+		
+		
 		reader.close();
 		isReady = true;
 	}

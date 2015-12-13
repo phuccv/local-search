@@ -45,6 +45,7 @@ public class SearchTabuAssign implements SearchMethod {
 		this.config = config;
 		this.constraintSystem = cs;
 		this.variablesList = constraintSystem.getVariables();
+		
 		if(variablesList == null){
 			logger.error("Constructor: constraint system invalid -- no vairable list");
 			return;
@@ -110,6 +111,7 @@ public class SearchTabuAssign implements SearchMethod {
 			 */
 			for(int i = 0; i< variablesList.length; i++){
 				VarIntLS variable = variablesList[i];
+				int state = 0;
 				/*
 				 *  search all value assignable to variable
 				 */
@@ -128,14 +130,22 @@ public class SearchTabuAssign implements SearchMethod {
 					 */
 					int deltaCheck = 
 							constraintSystem.getAssignDelta(variable, j + variable.getMinValue());
-					if( deltaCheck < minDelta){ // found new better assign
+					if( deltaCheck < minDelta){ // found new better assignment
 						bestMove.clear();
 						minDelta = deltaCheck;
 						bestMove.add(i, j);
+						state = 1;
 					} else if (deltaCheck == minDelta){ // found same with best assign
+						if(state == 1 && minDelta <= 0){
+							bestMove.size --;
+						}
+						state = 1;
 						bestMove.add(i, j);
+					} else {
+//						state = 0;
 					}
 				}
+				
 			}
 			
 			/*
@@ -144,7 +154,9 @@ public class SearchTabuAssign implements SearchMethod {
 			if(bestMove.isEmpty()){
 				numReset ++;
 				if(numReset > maxResetForOneLocal){
-					logger.info("Big reseting...");
+					if(VERBOSE){
+						logger.info("Big reseting...");
+					}
 					tracer.globalReset(0); // FIXME reset times
 					for(int i = 0; i< variablesList.length; i++){
 						VarIntLS var = variablesList[i];
@@ -157,7 +169,9 @@ public class SearchTabuAssign implements SearchMethod {
 					numReset = 0;
 					continue; // search continue;
 				}
-				logger.info("No more Movable! Restarting " + numReset +  " ..");
+				if(VERBOSE){
+					logger.info("No more Movable! Restarting " + numReset +  " ..");
+				}
 				tracer.localReset(numReset);
 				for(int i = 0; i< variablesList.length; i++){
 					variablesList[i].setValuePropagate(localBest[i]);
@@ -173,7 +187,9 @@ public class SearchTabuAssign implements SearchMethod {
 				if(nonStableCount > maxStable){
 					numReset ++;
 					if(numReset > maxResetForOneLocal){
-						logger.info("Big reseting...");
+						if(VERBOSE){
+							logger.info("Big reseting...");
+						}
 						tracer.globalReset(0);// FIXME reset times
 						for(int i = 0; i< variablesList.length; i++){
 							VarIntLS var = variablesList[i];
@@ -186,7 +202,9 @@ public class SearchTabuAssign implements SearchMethod {
 						numReset = 0;
 						continue; // search continue;
 					}
-					logger.info("Restarting..");
+					if(VERBOSE){
+						logger.info("Restarting..");
+					}
 					tracer.localReset(numReset);
 					for(int i = 0; i< variablesList.length; i++){
 						variablesList[i].setValuePropagate(localBest[i]);
@@ -237,7 +255,7 @@ public class SearchTabuAssign implements SearchMethod {
 					}
 				}
 			}
-			// update tabuList
+			// update tabuTable
 			tabuTable[variableId][value] = iterator;
 			
 			/*
