@@ -35,6 +35,8 @@ public class RequireLeastOne extends AbstractInvariant implements IConstraint {
 			allVarSet.addAll(s);
 			consVarSet.add(s);
 		}
+		
+		allVars = allVarSet.toArray(new VarIntLS[0]);
 		manager.post(this);
 	}
 	
@@ -50,6 +52,10 @@ public class RequireLeastOne extends AbstractInvariant implements IConstraint {
 
 	@Override
 	public void initPropagate() {
+		if(constraints.length == 0){
+			violations = 0;
+			return;
+		}
 		violations = Integer.MAX_VALUE;
 		for(IConstraint c : constraints){
 			if(violations > c.violations()){
@@ -88,13 +94,16 @@ public class RequireLeastOne extends AbstractInvariant implements IConstraint {
 			if(consVarSet.get(i).contains(varGet)){
 				int d = constraints[i].getAssignDelta(varGet, val);
 				
-				if(newVio < d){
+				if(newVio > d){
 					newVio = d;
 					if(newVio == 0){
 						break;
 					}
 				}
 			}
+		}
+		if(newVio == Integer.MAX_VALUE){
+			return 0;
 		}
 		return newVio -violations;
 	}
@@ -107,13 +116,16 @@ public class RequireLeastOne extends AbstractInvariant implements IConstraint {
 			if(vars.contains(var) || vars.contains(other)){
 				int d = constraints[i].getSwapDelta(var, other);
 				
-				if(newVio < d){
+				if(newVio > d){
 					newVio = d;
 					if(newVio == 0){
 						break;
 					}
 				}
 			}
+		}
+		if(newVio == Integer.MAX_VALUE){
+			newVio = violations;
 		}
 		return newVio -violations;
 	}

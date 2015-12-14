@@ -37,19 +37,19 @@ public class BenchmarkMain {
 			BpData data = dataMng.getDataById(i);
 
 			BpModelCombine model = new BpModelCombine(data);
-			SearchMethod[] searchs = new SearchMethod[2];
+			SearchMethod[] searchs = new SearchMethod[1];
 			searchs[0] = new SearchTabuAssign(model.getConstraintSystem(), model, config);
-			searchs[1] = new SearchTabuMixAssignSwap(model.getConstraintSystem(), model, config);
-			InitMethod[] inits = new InitMethod[3];
+//			searchs[1] = new SearchTabuMixAssignSwap(model.getConstraintSystem(), model, config);
+			InitMethod[] inits = new InitMethod[2];
 			inits[0] = new BpAllZeroInitMethod(model);
-			inits[1] = new BpAllOutOfBinInitMethod(model);
-			inits[2] = new BpRandomInitMethod(model);
+//			inits[1] = new BpAllOutOfBinInitMethod(model);
+			inits[1] = new BpRandomInitMethod(model);
 			System.out.println("[====================================================]\n"
 					+ data.getFileName());
-			for(int k = 0; k < 2; k++){
+			for(int k = 0; k < searchs.length; k++){
 				SearchMethod search = searchs[k];
 				System.out.println("Search: " + search.getClass().getSimpleName());
-				for(int l = 0; l < 3; l++){
+				for(int l = 0; l < inits.length; l++){
 					long[] times = new long[RUN_COUNT];
 					int[] violations = new int[RUN_COUNT]; 
 					InitMethod init = inits[l];

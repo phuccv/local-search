@@ -35,6 +35,9 @@ public class RequireAll extends AbstractInvariant implements IConstraint {
 			allVarSet.addAll(s);
 			consVarSet.add(s);
 		}
+		
+		allVars = allVarSet.toArray(new VarIntLS[0]);
+		
 		manager.post(this);
 	}
 	
